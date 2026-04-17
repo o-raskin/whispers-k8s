@@ -23,7 +23,10 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
   --create-namespace \
   --set controller.hostNetwork=true \
   --set controller.dnsPolicy=ClusterFirstWithHostNet \
-  --set controller.service.type=ClusterIP
+  --set controller.service.type=ClusterIP \
+  --set controller.admissionWebhooks.enabled=false
+
+kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=180s
 
 api_args=()
 web_args=()
