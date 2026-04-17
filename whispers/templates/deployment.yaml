@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "whispers.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: {{ include "whispers.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "whispers.fullname" . }}
+    spec:
+      containers:
+        - name: whispers
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+{{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+{{- end }}
+{{- if .Values.secretEnv }}
+          envFrom:
+            - secretRef:
+                name: {{ include "whispers.fullname" . }}-secret
+{{- end }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+          readinessProbe:
+{{- if .Values.probes.readiness.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.service.targetPort }}
+{{- end }}
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          livenessProbe:
+{{- if .Values.probes.liveness.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.service.targetPort }}
+{{- end }}
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          securityContext:
+            allowPrivilegeEscalation: false
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

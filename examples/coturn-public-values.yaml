@@ -1,0 +1,21 @@
+hostNetwork: true
+
+service:
+  type: NodePort
+  turnPort: 3478
+  turnNodePortTcp: 30478
+  turnNodePortUdp: 30479
+
+turn:
+  publicAddress: turn.example.com
+  realm: turn.example.com
+  relayMinPort: 49160
+  relayMaxPort: 49200
+  auth:
+    existingSecret:
+      name: coturn-auth
+      usernameKey: username
+      passwordKey: password
+  extraConfig:
+    - no-tls
+    - no-dtls

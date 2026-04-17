@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "whispers-webapp.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: {{ include "whispers-webapp.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "whispers-webapp.fullname" . }}
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if or .Values.config .Values.secretEnv }}
+          envFrom:
+{{- if .Values.config }}
+            - configMapRef:
+                name: {{ include "whispers-webapp.fullname" . }}-config
+{{- end }}
+{{- if .Values.secretEnv }}
+            - secretRef:
+                name: {{ include "whispers-webapp.fullname" . }}-secret
+{{- end }}
+{{- end }}
+{{- with .Values.env }}
+          env:
+{{ toYaml . | indent 12 }}
+{{- end }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: {{ .Values.service.targetPort }}
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: {{ .Values.service.targetPort }}
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          securityContext:
+            allowPrivilegeEscalation: false
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

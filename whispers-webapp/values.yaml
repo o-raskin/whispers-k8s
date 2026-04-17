@@ -1,0 +1,48 @@
+replicaCount: 1
+
+image:
+  repository: vite-frontend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+ingress:
+  enabled: false
+  className: nginx
+  host: ""
+  annotations: {}
+  tls:
+    enabled: false
+    secretName: ""
+
+config: {}
+
+secretEnv: {}
+
+env: []
+
+probes:
+  readiness:
+    path: /
+    initialDelaySeconds: 3
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+  liveness:
+    path: /
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi

@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "coturn.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: {{ include "coturn.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "coturn.fullname" . }}
+    spec:
+{{- if .Values.hostNetwork }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+{{- end }}
+      containers:
+        - name: coturn
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.secret.turnserverConf }}
+          args:
+            - -c
+            - /etc/coturn/turnserver.conf
+{{- else }}
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              cat >/tmp/turnserver.conf <<EOF
+              listening-port={{ .Values.service.turnPort }}
+              listening-ip=0.0.0.0
+              external-ip={{ required "coturn.turn.publicAddress is required" .Values.turn.publicAddress }}
+              min-port={{ .Values.turn.relayMinPort }}
+              max-port={{ .Values.turn.relayMaxPort }}
+              realm={{ default .Values.turn.publicAddress .Values.turn.realm }}
+              server-name={{ .Values.turn.publicAddress }}
+              fingerprint
+              stale-nonce
+              no-multicast-peers
+              no-cli
+              lt-cred-mech
+              user=${TURN_USERNAME}:${TURN_PASSWORD}
+              verbose
+              simple-log
+{{- range .Values.turn.extraConfig }}
+              {{ . }}
+{{- end }}
+              EOF
+              exec turnserver -c /tmp/turnserver.conf
+{{- end }}
+{{- if .Values.turn.auth.existingSecret.name }}
+          env:
+            - name: TURN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.turn.auth.existingSecret.name }}
+                  key: {{ .Values.turn.auth.existingSecret.usernameKey }}
+            - name: TURN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.turn.auth.existingSecret.name }}
+                  key: {{ .Values.turn.auth.existingSecret.passwordKey }}
+{{- else if not .Values.secret.turnserverConf }}
+          env:
+            - name: TURN_USERNAME
+              value: {{ required "coturn.turn.auth.username is required when turn.auth.existingSecret.name is empty" .Values.turn.auth.username | quote }}
+            - name: TURN_PASSWORD
+              value: {{ required "coturn.turn.auth.password is required when turn.auth.existingSecret.name is empty" .Values.turn.auth.password | quote }}
+{{- end }}
+          ports:
+            - name: turn-tcp
+              containerPort: {{ .Values.containerPorts.turn }}
+              protocol: TCP
+            - name: turn-udp
+              containerPort: {{ .Values.containerPorts.turn }}
+              protocol: UDP
+{{- if .Values.secret.turnserverConf }}
+          volumeMounts:
+            - name: coturn-config
+              mountPath: /etc/coturn/turnserver.conf
+              subPath: turnserver.conf
+{{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+{{- if .Values.secret.turnserverConf }}
+      volumes:
+        - name: coturn-config
+          secret:
+            secretName: {{ default (printf "%s-config" (include "coturn.fullname" .)) .Values.secret.name }}
+{{- end }}

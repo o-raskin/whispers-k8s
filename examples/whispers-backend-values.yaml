@@ -1,0 +1,12 @@
+image:
+  repository: whispers
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+env:
+  PORT: "8080"

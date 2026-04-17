@@ -1,0 +1,45 @@
+replicaCount: 1
+
+image:
+  repository: coturn/coturn
+  tag: latest
+  pullPolicy: IfNotPresent
+
+hostNetwork: true
+
+service:
+  type: NodePort
+
+  turnPort: 3478
+  turnNodePortTcp: 30478
+  turnNodePortUdp: 30479
+
+containerPorts:
+  turn: 3478
+
+turn:
+  publicAddress: ""
+  realm: ""
+  relayMinPort: 49160
+  relayMaxPort: 49200
+  auth:
+    username: ""
+    password: ""
+    existingSecret:
+      name: ""
+      usernameKey: username
+      passwordKey: password
+  extraConfig: []
+
+secret:
+  create: false
+  name: ""
+  turnserverConf: ""
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 300m
+    memory: 256Mi

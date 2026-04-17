@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "coturn.fullname" . }}
+spec:
+  selector:
+    app: {{ include "coturn.fullname" . }}
+  type: {{ .Values.service.type }}
+  ports:
+    - name: turn-tcp
+      port: {{ .Values.service.turnPort }}
+      targetPort: {{ .Values.containerPorts.turn }}
+      protocol: TCP
+      nodePort: {{ .Values.service.turnNodePortTcp }}
+    - name: turn-udp
+      port: {{ .Values.service.turnPort }}
+      targetPort: {{ .Values.containerPorts.turn }}
+      protocol: UDP
+      nodePort: {{ .Values.service.turnNodePortUdp }}
