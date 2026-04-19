@@ -1,0 +1,23 @@
+image:
+  repository: ${WEBAPP_IMAGE_REPOSITORY}
+  tag: ${WEBAPP_IMAGE_TAG}
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+ingress:
+  enabled: true
+  className: traefik
+  host: ${WEB_HOST}
+  tls:
+    enabled: ${TLS_ENABLED}
+    secretName: whispers-webapp-tls
+
+config:
+  PUBLIC_APP_ORIGIN: ${APP_SCHEME}://${WEB_HOST}
+  API_BASE_URL: ${APP_SCHEME}://${BACKEND_HOST}
+  TURN_HOST: ${TURN_HOST}
+  TURN_PORT: "3478"

@@ -10,6 +10,17 @@ service:
   port: 8080
   targetPort: 8080
 
+ingress:
+  enabled: false
+  className: traefik
+  host: ""
+  annotations: {}
+  tls:
+    enabled: false
+    secretName: ""
+  paths:
+    - /
+
 env:
   PORT: "8080"
 

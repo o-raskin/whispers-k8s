@@ -1,0 +1,22 @@
+image:
+  repository: ${BACKEND_IMAGE_REPOSITORY}
+  tag: ${BACKEND_IMAGE_TAG}
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: traefik
+  host: ${BACKEND_HOST}
+  tls:
+    enabled: ${TLS_ENABLED}
+    secretName: whispers-webapp-tls
+  paths:
+    - /
+
+env:
+  PORT: "8080"
